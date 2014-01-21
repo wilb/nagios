@@ -301,7 +301,7 @@ service 'nagios' do
 end
 
 # Add the NRPE check to monitor the Nagios server if NRPE is on the node
-if node.recipes.any? { |recipe| /^nrpe/ =~ recipe }
+if node['recipes'].any? { |recipe| /^nrpe/ =~ recipe }
   nagios_nrpecheck 'check_nagios' do
     command "#{node['nagios']['plugin_dir']}/check_nagios"
     parameters "-F #{node["nagios"]["cache_dir"]}/status.dat -e 4 -C /usr/sbin/#{nagios_service_name}"

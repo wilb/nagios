@@ -97,7 +97,7 @@ end
 
 # if the nrpe cookbook is not applied on this node we need to install the monitoring plugins
 # otherwise the node won't have check_nrpe and Nagios won't be entirely functional for most use cases
-unless node.recipes.any? { |recipe| /^nrpe/ =~ recipe }
+unless node['recipes'].any? { |recipe| /^nrpe/ =~ recipe }
   bash 'compile-nagios-nrpe' do
     cwd Chef::Config[:file_cache_path]
     code <<-EOH
