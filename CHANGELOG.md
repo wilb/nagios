@@ -2,6 +2,14 @@ nagios Cookbook CHANGELOG
 =========================
 This file is used to list changes made in each version of the nagios cookbook.
 
+
+v6.0.0
+### Breaking changes
+- All NRPE client functionality has been removed from this cookbook.  That functionality is now in the NRPE cookbook.  This greatly simplifies both cookbooks and allows for the installation of Nagios without NRPE.
+- The default recipe now installs Nagios server (previously it installed NRPE client)
+- RHEL installations default to package (previously source)
+- node['nagios']['server']['web_server']  and node['nagios']['server']['nginx_dispatch'] are now strings (previously they were symbols)
+
 v5.2.0
 ------
 ### Breaking changes
