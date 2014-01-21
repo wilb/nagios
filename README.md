@@ -2,7 +2,7 @@ nagios Cookbook
 ===============
 [![Build Status](https://secure.travis-ci.org/tas50/nagios.png?branch=master)](http://travis-ci.org/tas50/nagios)
 
-Installs and configures Nagios server and NRPE client. Chef nodes are automatically discovered using search, and Nagios host groups are created based on Chef roles and optionally environments as well. NRPE client commands can be defined by using a LWRP, and Nagios service checks applied to hostgroups using definitions in data bag items.
+Installs and configures Nagios server. Chef nodes are automatically discovered using search, and Nagios host groups are created based on Chef roles and optionally environments as well. NRPE client commands can be defined by using a LWRP, and Nagios service checks applied to hostgroups using definitions in data bag items.
 
 
 Requirements
@@ -42,41 +42,9 @@ The following attributes are used by both client and server recipes.
 * `node['nagios']['plugin_dir']` - location where Nagios plugins go, default '/usr/lib/nagios/plugins'.
 * `node['nagios']['multi_environment_monitoring']` - Chef server will monitor hosts in all environments, not just its own, default 'false'
 
-### client
-The following attributes are used for the NRPE client
-
-##### installation method
-* `node['nagios']['client']['install_method']` - whether to install from package or source. Default chosen by platform based on known packages available for NRPE: debian/ubuntu 'package', Redhat/CentOS/Fedora/Scientific: source
-* `node['nagios']['plugins']['url']` - url to retrieve the plugins source
-* `node['nagios']['plugins']['version']` - version of the plugins source to download
-* `node['nagios']['plugins']['checksum']` - checksum of the plugins source tarball
-* `node['nagios']['nrpe']['home']` - home directory of NRPE, default /usr/lib/nagios
-* `node['nagios']['nrpe']['log_facility']` - log facility for nrpe configuration, default nil (not set)
-* `node['nagios']['nrpe']['debug']` - debug level nrpe configuration, default 0
-* `node['nagios']['nrpe']['connection_timeout']` - connection timeout for nrpe configuration, default nil (not set)
-* `node['nagios']['nrpe']['conf_dir']` - location of the nrpe configuration, default /etc/nagios
-* `node['nagios']['nrpe']['packages']` - nrpe / plugin packages to install. The default attribute for RHEL/Fedora platforms contains a bare minimum set of packages. The full list of available packages is available at: `http://dl.fedoraproject.org/pub/epel/6/x86_64/repoview/letter_n.group.html`
-* `node['nagios']['nrpe']['url']` - url to retrieve NRPE source
-* `node['nagios']['nrpe']['version']` - version of NRPE source to download
-* `node['nagios']['nrpe']['checksum']` - checksum of the NRPE source tarball
 * `node['nagios']['plugins']['url']` - url to retrieve the plugins source from
 * `node['nagios']['plugins']['version']` - version of the plugins source to download
 * `node['nagios']['plugins']['checksum']` - checksum of the plugins source tarball
-
-##### directories and paths
-* `node['nagios']['nrpe']['home']` - home directory of NRPE
-* `node['nagios']['nrpe']['conf_dir']` - location of the nrpe configuration
-* `node['nagios']['nrpe']['ssl_lib_dir']` - ssl directory used by NRPE
-* `node['nagios']['nrpe']['pidfile']` - location to store the NRPE pid file
-
-##### authorization and server discovery
-* `node['nagios']['server_role']` - the role that the Nagios server will have in its run list that the clients can search for.
-* `node['nagios']['allowed_hosts']` - additional hosts that are allowed to connect to this client. Must be an array of strings (i.e. `%w(test.host other.host)`). These hosts are added in addition to 127.0.0.1 and IPs that are found via search.
-* `node['nagios']['using_solo_search']` - discover server information in node data_bags even with chef solo through the use of solo-search (https://github.com/edelight/chef-solo-search)
-
-##### misc
-* `node['nagios']['nrpe']['dont_blame_nrpe']` - allows the server to send additional values to NRPE via arguments.  this needs to be enabled for most checks to function
-* `node['nagios']['nrpe']['command_timeout']` - the amount of time NRPE will wait for a command to execute before timing out
 
 ### server
 The following attributes are used for the Nagios server
@@ -201,15 +169,7 @@ The client recipe searches for servers allowed to connect via NRPE that have a r
 
 Searches are confined to the node's `chef_environment` unless the `multi_environment_monitoring` attribute has been set to true.
 
-Client commands for NRPE can be installed using the nrpecheck lwrp. (See __Resources/Providers__ below.)
-
 RHEL and Fedora default to installation via source, but you can install NRPE via package by changing `node['nagios']['client']['install_method']` to "package". Note that this will enable the EPEL repository on RHEL systems, which may not be desired. You will also need to modify `node['nagios']['nrpe']['packages']` to include the appropriate NRPE plugins for your environment. The complete list is available at `http://dl.fedoraproject.org/pub/epel/6/x86_64/repoview/letter_n.group.html`
-
-### client\_package
-Installs the NRPE client and plugins from packages. Default for Debian / Ubuntu systems.
-
-### client\_source
-Installs the NRPE client and plugins from source. Default for Redhat and Fedora based systems, as native packages for NRPE are not available in the default repositories.
 
 ### server
 Includes the correct client installation recipe based on platform, either `nagios::server_package` or `nagios::server_source`.
@@ -580,62 +540,16 @@ The library included with the cookbook provides some helper methods used in temp
 * `nagios_attr` - retrieves a nagios attribute from the node.
 
 
-Resources/Providers
--------------------
-### nrpecheck
-
-The nrpecheck LWRP provides an easy way to add and remove NRPE checks from within cookbooks.
-
-#### Actions
-
-- `:add` creates a NRPE configuration file and restart the NRPE process. Default action.
-- `:remove` removes the configuration file and restart the NRPE process
-
-#### Attribute Parameters
-
-- `command_name`  The name of the check. This is the command that you will call from your nagios\_service data bag check
-- `warning_condition` String that you will pass to the command with the -w flag
-- `critical_condition` String that you will pass to the command with the -c flag
-- `command` The actual command to execute (including the path). If this is not specified, this will use `node['nagios']['plugin_dir']/command_name` as the path to the command.
-- `parameters` Any additional parameters you wish to pass to the plugin.
-
-#### Examples
-
-```ruby
-# Use LWRP to define check_load
-nagios_nrpecheck "check_load" do
-  command "#{node['nagios']['plugin_dir']}/check_load"
-  warning_condition node['nagios']['checks']['load']['warning']
-  critical_condition node['nagios']['checks']['load']['critical']
-  action :add
-end
-```
-
-```ruby
-# Remove the check_load definition
-nagios_nrpecheck "check_load" do
-  action :remove
-end
-```
-
-
 Usage
 -----
 ### server setup
 Create a role named '`monitoring`', and add the nagios server recipe to the `run_list`. See __Monitoring Role__ above for an example.
-
-Apply the Nagios client recipe to nodes in order to install the NRPE client
 
 By default the Nagios server will only monitor systems in its same environment. To change this set the `multi_environment_monitoring` attribute. See __Attributes__
 
 Create data bag items in the `users` data bag for each administer you would like to be able to login to the Nagios server UI. Pay special attention to the method you would like to use to authorization users (openid or htauth). See __Users__ and __Atttributes__
 
 At this point you now have a minimally functional Nagios server, however the server will lack any service checks outside of the single Nagios Server health check.
-
-### defining checks
-NRPE commands are defined in recipes using the nrpecheck LWRP provider. For base system monitoring such as load, ssh, memory, etc you may want to create a cookbook in your environment that defines each monitoring command via the LWRP. See the examples folder for an example of base monitoring.
-
-With NRPE commands created using the LWRP you will need to define Nagios services to use those commands. These services are defined using the `nagios_services` data bag and applied to roles and/or environments. See __Services__
 
 ### enabling notifications
 You need to set `default['nagios']['notifications_enabled'] = 1` attribute on your Nagios server to enable email notifications.
@@ -683,7 +597,8 @@ License & Authors
 ```text
 Copyright 2009, 37signals
 Copyright 2009-2013, Opscode, Inc
-Copyright 2012, Webtrends Inc.
+Copyright 2012, Webtrends, Inc.
+Copyright 2013-2014, Limelight Networks, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
