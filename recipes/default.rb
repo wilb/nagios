@@ -20,4 +20,4 @@
 # limitations under the License.
 #
 
-include_recipe 'nagios::client'
+include_recipe 'nagios::server'

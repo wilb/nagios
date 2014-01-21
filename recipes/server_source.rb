@@ -95,10 +95,35 @@ bash 'compile-nagios' do
   creates "/usr/sbin/#{node['nagios']['server']['name']}"
 end
 
+# if the nrpe cookbook is not applied on this node we need to install the monitoring plugins
+# otherwise the node won't have check_nrpe and Nagios won't be entirely functional for most use cases
+unless node.recipes.any? { |recipe| /^nrpe/ =~ recipe }
+  bash 'compile-nagios-nrpe' do
+    cwd Chef::Config[:file_cache_path]
+    code <<-EOH
+      tar zxvf nrpe-#{nrpe_version}.tar.gz
+      cd nrpe-#{nrpe_version}
+      ./configure --prefix=/usr \
+                  --sysconfdir=/etc \
+                  --localstatedir=/var \
+                  --libexecdir=#{node['nagios']['plugin_dir']} \
+                  --libdir=#{node['nagios']['nrpe']['home']} \
+                  --enable-command-args \
+                  --with-nagios-user=#{node['nagios']['user']} \
+                  --with-nagios-group=#{node['nagios']['group']} \
+                  --with-ssl=/usr/bin/openssl \
+                  --with-ssl-lib=#{node['nagios']['nrpe']['ssl_lib_dir']}
+      make -s
+      make install-plugin
+    EOH
+    creates "#{node['nagios']['plugin_dir']}/check_nrpe"
+  end
+end
+
 directory node['nagios']['config_dir'] do
   owner 'root'
   group 'root'
-  mode 00755
+  mode '0755'
 end
 
 %w{ cache_dir log_dir run_dir }.each do |dir|
@@ -106,7 +131,7 @@ end
   directory node['nagios'][dir] do
     owner node['nagios']['user']
     group node['nagios']['group']
-    mode 00755
+    mode '0755'
   end
 
 end
@@ -114,18 +139,11 @@ end
 directory "/usr/lib/#{node['nagios']['server']['vname']}" do
   owner node['nagios']['user']
   group node['nagios']['group']
-  mode 00755
+  mode '0755'
 end
 
 link "#{node['nagios']['conf_dir']}/stylesheets" do
   to "#{node['nagios']['docroot']}/stylesheets"
-end
-
-# if nrpe client is not being installed by source then we need the NRPE plugin
-if node['nagios']['client']['install_method'] == 'package'
-
-  include_recipe 'nagios::nrpe_source'
-
 end
 
 if web_srv == :apache

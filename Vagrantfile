@@ -11,7 +11,7 @@ Vagrant::Config.run do |config|
   config.vm.provision :chef_client do |chef|
     chef.add_role("monitoring")
     chef.add_recipe("apt")
-    chef.add_recipe("nagios::server")
+    chef.add_recipe("nagios”)
   end
 
   config.vm.define :nagios_1004 do |nagios|
