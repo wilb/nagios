@@ -32,15 +32,13 @@ else
 end
 
 # configure either Apache2 or NGINX
-web_srv = node['nagios']['server']['web_server'].to_sym
-
-case web_srv
-when :nginx
+case node['nagios']['server']['web_server']
+when 'nginx'
   Chef::Log.info 'Setting up Nagios server via NGINX'
   include_recipe 'nagios::nginx'
   web_user = node['nginx']['user']
   web_group = node['nginx']['group'] || web_user
-when :apache
+when 'apache'
   Chef::Log.info 'Setting up Nagios server via Apache2'
   include_recipe 'nagios::apache'
   web_user = node['apache']['user']
@@ -63,7 +61,7 @@ end
 
 case node['nagios']['server_auth_method']
 when 'openid'
-  if web_srv == :apache
+  if node['nagios']['server']['web_server'] == 'apache'
     include_recipe 'apache2::mod_auth_openid'
   else
     Chef::Log.fatal('OpenID authentication for Nagios is not supported on NGINX')
@@ -71,7 +69,7 @@ when 'openid'
     fail
   end
 when 'cas'
-  if web_srv == :apache
+  if node['nagios']['server']['web_server'] == 'apache'
     include_recipe 'apache2::mod_auth_cas'
   else
     Chef::Log.fatal('CAS authentication for Nagios is not supported on NGINX')
@@ -79,7 +77,7 @@ when 'cas'
     fail
   end
 when 'ldap'
-  if web_srv == :apache
+  if node['nagios']['server']['web_server'] == 'apache'
     include_recipe 'apache2::mod_authnz_ldap'
   else
     Chef::Log.fatal('LDAP authentication for Nagios is not supported on NGINX')
@@ -92,7 +90,7 @@ else
     source 'htpasswd.users.erb'
     owner node['nagios']['user']
     group web_group
-    mode 00640
+    mode '0640'
     variables(:sysadmins => sysadmins)
   end
 end
@@ -203,19 +201,19 @@ end
 directory "#{node['nagios']['conf_dir']}/dist" do
   owner node['nagios']['user']
   group node['nagios']['group']
-  mode 00755
+  mode '0755'
 end
 
 directory node['nagios']['state_dir'] do
   owner node['nagios']['user']
   group node['nagios']['group']
-  mode 00751
+  mode '0751'
 end
 
 directory "#{node['nagios']['state_dir']}/rw" do
   owner node['nagios']['user']
   group web_group
-  mode 02710
+  mode '2710'
 end
 
 execute 'archive-default-nagios-object-definitions' do
@@ -226,7 +224,7 @@ end
 directory "#{node['nagios']['conf_dir']}/certificates" do
   owner web_user
   group web_group
-  mode 00700
+  mode '0700'
 end
 
 bash 'Create SSL Certificates' do
