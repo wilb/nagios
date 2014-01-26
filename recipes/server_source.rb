@@ -95,29 +95,10 @@ bash 'compile-nagios' do
   creates "/usr/sbin/#{node['nagios']['server']['name']}"
 end
 
-# if the nrpe cookbook is not applied on this node we need to install the monitoring plugins
-# otherwise the node won't have check_nrpe and Nagios won't be entirely functional for most use cases
-unless node['recipes'].any? { |recipe| /^nrpe/ =~ recipe }
-  bash 'compile-nagios-nrpe' do
-    cwd Chef::Config[:file_cache_path]
-    code <<-EOH
-      tar zxvf nrpe-#{nrpe_version}.tar.gz
-      cd nrpe-#{nrpe_version}
-      ./configure --prefix=/usr \
-                  --sysconfdir=/etc \
-                  --localstatedir=/var \
-                  --libexecdir=#{node['nagios']['plugin_dir']} \
-                  --libdir=#{node['nagios']['nrpe']['home']} \
-                  --enable-command-args \
-                  --with-nagios-user=#{node['nagios']['user']} \
-                  --with-nagios-group=#{node['nagios']['group']} \
-                  --with-ssl=/usr/bin/openssl \
-                  --with-ssl-lib=#{node['nagios']['nrpe']['ssl_lib_dir']}
-      make -s
-      make install-plugin
-    EOH
-    creates "#{node['nagios']['plugin_dir']}/check_nrpe"
-  end
+# The NRPE daemon also includes the check_nrpe plugin that is requires for
+# Nagios server to perform NRPE checks
+if node['nagios']['server']['include_nrpe_recipe']
+  include_recipe 'nrpe::default'
 end
 
 directory node['nagios']['config_dir'] do
