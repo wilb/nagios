@@ -27,7 +27,7 @@ include_recipe 'php::module_gd'
 web_srv = node['nagios']['server']['web_server'].to_sym
 
 case web_srv
-when :apache
+when 'apache'
   include_recipe 'nagios::apache'
 else
   include_recipe 'nagios::nginx'
@@ -48,7 +48,7 @@ end
 group node['nagios']['group'] do
   members [
     node['nagios']['user'],
-    web_srv == :nginx ? node['nginx']['user'] : node['apache']['user']
+    web_srv == 'nginx' ? node['nginx']['user'] : node['apache']['user']
   ]
   action :modify
 end
@@ -127,7 +127,7 @@ link "#{node['nagios']['conf_dir']}/stylesheets" do
   to "#{node['nagios']['docroot']}/stylesheets"
 end
 
-if web_srv == :apache
+if web_srv == 'apache'
   apache_module 'cgi' do
     enable :true
   end
