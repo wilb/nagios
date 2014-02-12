@@ -41,6 +41,9 @@ The following attributes are used by both client and server recipes.
 * `node['nagios']['group']` - Nagios group, default 'nagios'.
 * `node['nagios']['plugin_dir']` - location where Nagios plugins go, default '/usr/lib/nagios/plugins'.
 * `node['nagios']['multi_environment_monitoring']` - Chef server will monitor hosts in all environments, not just its own, default 'false'
+* `node['nagios']['hosts_template']` - Host template you want to inherit
+  properties/variables from, default 'server'. For more informations,
+  see the nagios doc on [Object Inheritance](http://nagios.sourceforge.net/docs/3_0/objectinheritance.html).
 
 ### client
 The following attributes are used for the NRPE client
@@ -396,6 +399,32 @@ Here is an example timeperiod definition:
 ```
 
 Additional information on defining time periods can be found in the [Nagios Documentation](http://nagios.sourceforge.net/docs/3_0/objectdefinitions.html#timeperiod).
+
+### Host Templates
+Host templates are optional, but allow you to specify combinations of attributes to apply to a host. Create a nagios_hosttemplates\ data bag that will contain definitions for host templates to be used. Each host template need only specify id and whichever parameters you want to override.
+
+Here's an example of a template that reduces the check frequency to once per day and changes the retry interval to 1 hour.
+
+```javascript
+{
+  "id": "windows-host",
+  "check_command": "check-host-alive-windows"
+}
+```
+
+You then use the host template by setting the `node['nagios']['host_template']` attribute for a node. You could apply this with a role as follows:
+
+```ruby
+role 'windows'
+
+default_attributes(
+  nagios: {
+    host_template: 'windows-host'
+  }
+)
+```
+
+Additional directives can be defined as described in the Nagios documentation for [Host Definitions](http://nagios.sourceforge.net/docs/3_0/objectdefinitions.html#host).
 
 ### Templates
 Templates are optional, but allow you to specify combinations of attributes to apply to a service. Create a nagios_templates\ data bag that will contain definitions for templates to be used. Each template need only specify id and whichever parameters you want to override.

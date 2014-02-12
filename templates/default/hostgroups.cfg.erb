@@ -29,3 +29,10 @@ define hostgroup {
 }
 
 <% end -%>
+<% if node['nagios']['multi_environment_monitoring'] -%>
+# working around a bug when using multi_environment_monitoring - "_default" doesn't get created
+define hostgroup {
+  hostgroup_name _default
+  alias _default
+}
+<% end -%>
